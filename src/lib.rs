@@ -49,7 +49,7 @@ use proc_macro::{Span, TokenStream};
 use quote::ToTokens;
 use syn::{
 	Item::{Enum, Struct, Type, Union},
-	MetaNameValue, parse_macro_input,
+	ItemEnum, MetaNameValue, parse_macro_input,
 	punctuated::Punctuated,
 };
 use walkdir::WalkDir;
@@ -68,6 +68,23 @@ fn valid_variant(enum_name: &syn::Ident, attrs: Vec<syn::Attribute>) -> bool {
 	}
 
 	false
+}
+
+fn remove_enum_dispatch(mut item: ItemEnum) -> TokenStream {
+	let mut enum_dispatch_index = None;
+
+	for (index, attr) in item.attrs.iter().enumerate() {
+		match &attr.meta {
+			syn::Meta::Path(_) | syn::Meta::List(_) => enum_dispatch_index = Some(index),
+			_ => {}
+		}
+	}
+
+	if let Some(index) = enum_dispatch_index {
+		item.attrs.remove(index);
+	}
+
+	item.to_token_stream().into()
 }
 
 /// Creates enum variants by discovering types annotated with [macro@enum_builder_variant].
@@ -92,12 +109,17 @@ fn valid_variant(enum_name: &syn::Ident, attrs: Vec<syn::Attribute>) -> bool {
 /// ```
 #[proc_macro_attribute]
 pub fn enum_builder(attrs: TokenStream, item: TokenStream) -> TokenStream {
+	let parsed_item = parse_macro_input!(item);
+
+	let Enum(item_enum) = parsed_item else {
+		return parsed_item.to_token_stream().into();
+	};
+
 	let Some(dir) = Span::call_site().local_file() else {
-		return item;
+		return remove_enum_dispatch(item_enum);
 	};
 
 	let mut dir = dir.parent().unwrap().to_owned();
-	let parsed_item = parse_macro_input!(item);
 	let mut enum_variants: Vec<String> = vec![];
 	let attrs = parse_macro_input!(attrs with Punctuated::<MetaNameValue, syn::Token![,]>::parse_terminated);
 
@@ -116,12 +138,6 @@ pub fn enum_builder(attrs: TokenStream, item: TokenStream) -> TokenStream {
 				.to_owned(),
 		);
 	}
-
-	let Enum(item_enum) = parsed_item else {
-		return parsed_item.to_token_stream().into();
-	};
-
-	let enum_name = item_enum.ident;
 
 	for entry in WalkDir::new(dir) {
 		let Ok(entry) = entry else { continue };
@@ -146,7 +162,7 @@ pub fn enum_builder(attrs: TokenStream, item: TokenStream) -> TokenStream {
 
 			match item {
 				Struct(item) => {
-					if !valid_variant(&enum_name, item.attrs) {
+					if !valid_variant(&item_enum.ident, item.attrs) {
 						continue;
 					}
 
@@ -154,7 +170,7 @@ pub fn enum_builder(attrs: TokenStream, item: TokenStream) -> TokenStream {
 					generics = item.generics.to_token_stream().to_string();
 				}
 				Type(item) => {
-					if !valid_variant(&enum_name, item.attrs) {
+					if !valid_variant(&item_enum.ident, item.attrs) {
 						continue;
 					}
 
@@ -162,7 +178,7 @@ pub fn enum_builder(attrs: TokenStream, item: TokenStream) -> TokenStream {
 					generics = item.generics.to_token_stream().to_string();
 				}
 				Enum(item) => {
-					if !valid_variant(&enum_name, item.attrs) {
+					if !valid_variant(&item_enum.ident, item.attrs) {
 						continue;
 					}
 
@@ -170,7 +186,7 @@ pub fn enum_builder(attrs: TokenStream, item: TokenStream) -> TokenStream {
 					generics = item.generics.to_token_stream().to_string();
 				}
 				Union(item) => {
-					if !valid_variant(&enum_name, item.attrs) {
+					if !valid_variant(&item_enum.ident, item.attrs) {
 						continue;
 					}
 
@@ -184,8 +200,13 @@ pub fn enum_builder(attrs: TokenStream, item: TokenStream) -> TokenStream {
 		}
 	}
 
+	if enum_variants.is_empty() {
+		return remove_enum_dispatch(item_enum);
+	}
+
 	format!(
-		"#[enum_dispatch]\nenum {enum_name}<'a> {{ {} }}",
+		"#[enum_dispatch]\nenum {}<'a> {{ {} }}",
+		item_enum.ident,
 		enum_variants.join(",\n")
 	)
 	.parse()

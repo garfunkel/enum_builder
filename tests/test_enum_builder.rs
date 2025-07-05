@@ -51,7 +51,7 @@ impl<'a> AnimalSound for Snake<'a> {
 }
 
 #[test]
-fn it_works() {
+fn test_enum_builder() {
 	let dog: Animal = Dog {}.into();
 	let cow: Animal = Cow {}.into();
 	let fish: Animal = Fish {}.into();
