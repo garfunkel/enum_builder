@@ -48,15 +48,18 @@ use std::{ffi::OsStr, fs};
 use proc_macro::{Span, TokenStream};
 use quote::ToTokens;
 use syn::{
+	Attribute, Ident,
 	Item::{Enum, Struct, Type, Union},
-	ItemEnum, MetaNameValue, parse_macro_input,
+	ItemEnum, Meta, MetaNameValue, Token, parse_file, parse_macro_input,
 	punctuated::Punctuated,
 };
 use walkdir::WalkDir;
 
-fn valid_variant(enum_name: &syn::Ident, attrs: Vec<syn::Attribute>) -> bool {
+const ENUM_DISPATCH: &'static str = "enum_dispatch";
+
+fn valid_variant(enum_name: &Ident, attrs: Vec<Attribute>) -> bool {
 	for attr in attrs {
-		if let syn::Meta::List(list) = attr.meta {
+		if let Meta::List(list) = attr.meta {
 			if list.path.to_token_stream().to_string() != "enum_builder_variant" {
 				continue;
 			}
@@ -75,7 +78,16 @@ fn remove_enum_dispatch(mut item: ItemEnum) -> TokenStream {
 
 	for (index, attr) in item.attrs.iter().enumerate() {
 		match &attr.meta {
-			syn::Meta::Path(_) | syn::Meta::List(_) => enum_dispatch_index = Some(index),
+			Meta::Path(path) => {
+				if path.to_token_stream().to_string() == ENUM_DISPATCH {
+					enum_dispatch_index = Some(index);
+				}
+			}
+			Meta::List(list) => {
+				if list.path.to_token_stream().to_string() == ENUM_DISPATCH {
+					enum_dispatch_index = Some(index);
+				}
+			}
 			_ => {}
 		}
 	}
@@ -121,7 +133,8 @@ pub fn enum_builder(attrs: TokenStream, item: TokenStream) -> TokenStream {
 
 	let mut dir = dir.parent().unwrap().to_owned();
 	let mut enum_variants: Vec<String> = vec![];
-	let attrs = parse_macro_input!(attrs with Punctuated::<MetaNameValue, syn::Token![,]>::parse_terminated);
+	let attrs =
+		parse_macro_input!(attrs with Punctuated::<MetaNameValue, Token![,]>::parse_terminated);
 
 	for attr in attrs {
 		let name = attr.path.to_token_stream().to_string();
@@ -153,7 +166,7 @@ pub fn enum_builder(attrs: TokenStream, item: TokenStream) -> TokenStream {
 
 		let src = fs::read_to_string(path)
 			.expect(format!("unable to read file {}", path.to_string_lossy()).as_str());
-		let syntax = syn::parse_file(&src)
+		let syntax = parse_file(&src)
 			.expect(format!("unable to parse file {}", path.to_string_lossy()).as_str());
 
 		for item in syntax.items {
