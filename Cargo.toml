@@ -1,0 +1,23 @@
+[package]
+name = "enum_builder"
+description = "Simple macros that allow building enum types from variants that can be defined in multiple dispersed files in the crate."
+version = "0.1.0"
+license = "MIT"
+documentation = "https://docs.rs/enum_builder"
+homepage = "https://github.com/garfunkel/enum_builder"
+repository = "https://github.com/garfunkel/enum_builder"
+authors = ["Simon Allen <simon@simonallen.org>"]
+edition = "2024"
+rust-version = "1.88"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0.95"
+quote = "1.0.40"
+syn = { version = "2.0.104", features = ["full"] }
+walkdir = "2.5.0"
+
+[dev-dependencies]
+enum_dispatch = "0.3.13"
