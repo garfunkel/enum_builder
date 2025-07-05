@@ -1,10 +1,10 @@
 # enum_builder
 Simple macros that allow building enum types from variants that can be defined in multiple dispersed files in the crate.
 
-![Crates.io](https://img.shields.io/crates/v/enum_builder)
-![Documentation](https://img.shields.io/docsrs/enum_builder)
-![License](https://img.shields.io/github/license/garfunkel/enum_builder)
-![GitHub](https://img.shields.io/github/stars/garfunkel/enum_builder)
+[![Crates.io](https://img.shields.io/crates/v/enum_builder)](https://crates.io/crates/enum_builder)
+[![Documentation](https://img.shields.io/docsrs/enum_builder)](https://docs.rs/enum_builder/latest/enum_builder/)
+[![License](https://img.shields.io/github/license/garfunkel/enum_builder)](https://github.com/garfunkel/enum_builder/blob/master/LICENSE)
+[![GitHub](https://img.shields.io/github/stars/garfunkel/enum_builder)](https://github.com/garfunkel/enum_builder)
 
 ## Example
 #### main.rs
