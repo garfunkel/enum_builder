@@ -40,7 +40,7 @@ struct Fish {}
 It can be very useful to combine this crate with the
 [enum_dispatch](https://docs.rs/enum_dispatch/latest/enum_dispatch) crate, to allow for a simple
 "plugin" architecture without the overhead of dynamic dispatch. When doing this, take care to note
-that the order of macros is important, as [macro@enum_builder] must be used before
+that the order of macros is important, as [enum_builder](https://docs.rs/enum_builder/latest/enum_builder/attr.enum_builder.html) must be used before
 [enum_dispatch](https://docs.rs/enum_dispatch/latest/enum_dispatch/attr.enum_dispatch.html).
 
 #### Example

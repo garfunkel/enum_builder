@@ -1,7 +1,7 @@
 [package]
 name = "enum_builder"
 description = "Simple macros that allow building enum types from variants that can be defined in multiple dispersed files in the crate."
-version = "0.1.3"
+version = "0.1.4"
 license = "MIT"
 documentation = "https://docs.rs/enum_builder"
 homepage = "https://github.com/garfunkel/enum_builder"
